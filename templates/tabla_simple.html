@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Consulta de Localidades - ITER</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- DataTables -->
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+    <style>
+
+        body {
+            background-color: #f4f6f9;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            border-radius: 15px;
+        }
+
+        /* HEADER */
+        .header-section {
+
+            background: linear-gradient(135deg, #1d976c 0%, #93f9b9 100%);
+
+            color: white;
+
+            padding: 50px;
+
+            border-radius: 20px;
+
+            margin-bottom: 30px;
+
+            box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+        }
+
+        /* TARJETAS */
+        .card-custom {
+
+            border: none;
+
+            border-radius: 18px;
+
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+            overflow: hidden;
+
+            background: white;
+        }
+
+        /* ESTADÍSTICAS */
+        .stat-card {
+
+            background: white;
+
+            border-radius: 15px;
+
+            padding: 20px;
+
+            text-align: center;
+
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        .stat-number {
+
+            font-size: 2rem;
+
+            font-weight: bold;
+
+            color: #198754;
+        }
+
+        /* BOTONES */
+        .btn {
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* TABLA */
+        table.dataTable thead {
+            background-color: #198754;
+            color: white;
+        }
+
+        .badge-custom {
+
+            background-color: #198754;
+
+            color: white;
+
+            padding: 6px 10px;
+
+            border-radius: 10px;
+
+            font-size: 0.85rem;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container mt-4 mb-5">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
+
+        <div class="container-fluid">
+
+            <a class="navbar-brand fw-bold"
+               href="/">
+
+                <i class="bi bi-diagram-3-fill"></i>
+
+                TDA ITER 2020
+
+            </a>
+
+            <button class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav">
+
+                <span class="navbar-toggler-icon"></span>
+
+            </button>
+
+            <div class="collapse navbar-collapse"
+                 id="navbarNav">
+
+                <ul class="navbar-nav ms-auto">
+
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/tabla">
+                            <i class="bi bi-table"></i>
+                            Tabla
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="/vista/nube_puntos">
+
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Nube
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="/vista/vector">
+
+                            <i class="bi bi-bar-chart-line-fill"></i>
+                            Vector
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="/vista/distancias">
+
+                            <i class="bi bi-rulers"></i>
+                            Distancias
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="/vista/componentes">
+
+                            <i class="bi bi-share-fill"></i>
+                            Componentes
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="/vista/outliers">
+
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Outliers
+                        </a>
+                    </li>
+
+                </ul>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- HEADER -->
+    <div class="header-section text-center">
+
+        <h1 class="display-5">
+
+            <i class="bi bi-table"></i>
+
+            Consulta de Localidades (ITER)
+
+        </h1>
+
+        <p class="lead mt-3">
+
+            Exploración analítica de información poblacional
+            del Censo de Población y Vivienda 2020.
+
+        </p>
+
+        <a href="/"
+           class="btn btn-light mt-3">
+
+            <i class="bi bi-arrow-left"></i>
+
+            Volver al inicio
+
+        </a>
+
+    </div>
+
+    <!-- ALERTAS -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show">
+
+                    {{ message }}
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert">
+                    </button>
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+    {% endwith %}
+
+    <!-- INFORMACIÓN -->
+    <div class="card card-custom mb-4">
+
+        <div class="card-body">
+
+            <h4>
+
+                <i class="bi bi-info-circle-fill text-primary"></i>
+
+                Información de la consulta
+
+            </h4>
+
+            <p class="mt-3">
+
+                Esta tabla contiene métricas estadísticas
+                obtenidas mediante consultas SQL analíticas
+                sobre información poblacional del archivo
+                ITER 2020 del INEGI.
+
+            </p>
+
+            <ul>
+
+                <li>Total de localidades</li>
+
+                <li>Población total</li>
+
+                <li>Promedio poblacional</li>
+
+                <li>Máximos poblacionales</li>
+
+                <li>Mínimos poblacionales</li>
+
+            </ul>
+
+        </div>
+
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    {% if datos and datos|length > 0 %}
+
+    <div class="row mb-4">
+
+        <div class="col-md-4 mb-3">
+
+            <div class="stat-card">
+
+                <h5>Total de entidades</h5>
+
+                <div class="stat-number">
+                    {{ datos|length }}
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4 mb-3">
+
+            <div class="stat-card">
+
+                <h5>Población acumulada</h5>
+
+                <div class="stat-number">
+
+                    {{
+                        "{:,.0f}".format(
+                            datos
+| map(attribute='poblacion_total')
+| map('float')
+| sum
+                        )
+                    }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="col-md-4 mb-3">
+
+            <div class="stat-card">
+
+                <h5>Análisis estadístico</h5>
+
+                <div class="stat-number">
+
+                    <i class="bi bi-bar-chart-line-fill"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+    <!-- TABLA -->
+    <div class="card card-custom">
+
+        <div class="card-body">
+
+            <h4 class="mb-4">
+
+                <i class="bi bi-database-fill"></i>
+
+                Resultados de consulta analítica
+
+            </h4>
+
+            {% if datos and datos|length > 0 %}
+
+            <div class="table-responsive">
+
+                <table id="tablaDatos"
+                       class="table table-hover align-middle">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>#</th>
+
+                            <th>Entidad</th>
+
+                            <th>Total localidades</th>
+
+                            <th>Población total</th>
+
+                            <th>Promedio</th>
+
+                            <th>Máximo</th>
+
+                            <th>Mínimo</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for fila in datos %}
+
+                        <tr>
+
+                            <td>
+                                {{ loop.index }}
+                            </td>
+
+                            <td>
+
+                                <span class="badge-custom">
+
+                                    {{ fila.NOM_ENT }}
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <strong>
+
+                                    {{ "{:,.0f}".format(fila.total_localidades or 0) }}
+
+                                </strong>
+
+                            </td>
+
+                            <td>
+
+                                <strong>
+
+                                    {{ "{:,.0f}".format(fila.poblacion_total or 0) }}
+
+                                </strong>
+
+                            </td>
+
+                            <td>
+
+                                {{ "{:,.0f}".format(fila.promedio_poblacion or 0) }}
+
+                            </td>
+
+                            <td>
+
+                                {{ "{:,.0f}".format(fila.max_poblacion or 0) }}
+
+                            </td>
+
+                            <td>
+
+                                {{ "{:,.0f}".format(fila.min_poblacion or 0) }}
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            {% else %}
+
+            <div class="alert alert-warning text-center">
+
+                <h4>
+
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+
+                    No hay datos disponibles
+
+                </h4>
+
+                <p class="mt-3">
+
+                    La consulta no devolvió resultados válidos.
+
+                </p>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+<!-- Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- DataTables -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+
+{% if datos and datos|length > 0 %}
+
+$(document).ready(function() {
+
+    $('#tablaDatos').DataTable({
+
+        language: {
+
+            url:
+            'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+
+        },
+
+        pageLength: 10,
+
+        lengthMenu: [
+
+            [5, 10, 25, 50, -1],
+
+            [5, 10, 25, 50, "Todos"]
+
+        ],
+
+        order: [[3, 'desc']],
+
+        responsive: true
+
+    });
+
+});
+
+{% endif %}
+
+// AUTO-CERRAR ALERTAS
+setTimeout(function() {
+
+    const alerts =
+        document.querySelectorAll('.alert');
+
+    alerts.forEach(function(alert) {
+
+        const bsAlert =
+            new bootstrap.Alert(alert);
+
+        bsAlert.close();
+
+    });
+
+}, 5000);
+
+</script>
+
+</body>
+
+</html>

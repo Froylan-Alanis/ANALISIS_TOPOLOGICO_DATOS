@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Outliers y Z-Score</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        />
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+        <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+        <style>
+            body {
+                background-color: #f4f6f9;
+            }
+
+            /* NAVBAR */
+            .navbar {
+                border-radius: 15px;
+            }
+
+            /* HEADER */
+            .header-section {
+                background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+
+                color: white;
+
+                padding: 50px;
+
+                border-radius: 25px;
+
+                margin-bottom: 30px;
+
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            }
+
+            /* CARDS */
+            .card-custom {
+                border: none;
+
+                border-radius: 20px;
+
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+
+                overflow: hidden;
+
+                background: white;
+            }
+
+            /* STATS */
+            .stat-card {
+                background: white;
+
+                border-radius: 18px;
+
+                padding: 25px;
+
+                text-align: center;
+
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            }
+
+            .stat-number {
+                font-size: 2rem;
+
+                font-weight: bold;
+
+                color: #ff416c;
+            }
+
+            /* GRAFICA */
+            #grafica {
+                width: 100%;
+
+                height: 700px;
+            }
+
+            /* TABLA */
+            table.dataTable thead {
+                background-color: #ff416c;
+
+                color: white;
+            }
+
+            /* BADGES */
+            .badge-extremo {
+                background-color: #dc3545;
+
+                color: white;
+
+                padding: 6px 10px;
+
+                border-radius: 10px;
+            }
+
+            .badge-moderado {
+                background-color: #ffc107;
+
+                color: black;
+
+                padding: 6px 10px;
+
+                border-radius: 10px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="container-fluid mt-4 mb-5">
+            <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
+                <div class="container-fluid">
+                    <a class="navbar-brand fw-bold" href="/">
+                        <i class="bi bi-diagram-3-fill"></i>
+
+                        TDA ITER 2020
+                    </a>
+
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="/tabla">
+                                    <i class="bi bi-table"></i>
+
+                                    Tabla
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" href="/vista/nube_puntos">
+                                    <i class="bi bi-geo-alt-fill"></i>
+
+                                    Nube
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" href="/vista/vector">
+                                    <i class="bi bi-bar-chart-line-fill"></i>
+
+                                    Espacio
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" href="/vista/distancias">
+                                    <i class="bi bi-rulers"></i>
+
+                                    Distancias
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" href="/vista/componentes">
+                                    <i class="bi bi-share-fill"></i>
+
+                                    Componentes
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link active" href="/vista/outliers">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+
+                                    Outliers
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="header-section text-center">
+                <h1 class="display-4">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+
+                    Detección de Outliers
+                </h1>
+
+                <p class="lead mt-4">
+                    Identificación de anomalías poblacionales utilizando desviación estándar y Z-score.
+                </p>
+
+                <a href="/" class="btn btn-light mt-4 px-4 py-2">
+                    <i class="bi bi-arrow-left"></i>
+
+                    Volver al inicio
+                </a>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <h5>Total outliers</h5>
+
+                        <div class="stat-number" id="totalOutliers">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <h5>Z-score máximo</h5>
+
+                        <div class="stat-number" id="maxZ">0</div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <div class="stat-card">
+                        <h5>Población máxima</h5>
+
+                        <div class="stat-number" id="maxPob">0</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-custom mb-4">
+                <div class="card-body">
+                    <h3 class="mb-4">
+                        <i class="bi bi-graph-up-arrow"></i>
+
+                        Distribución de outliers
+                    </h3>
+
+                    <div id="grafica"></div>
+                </div>
+            </div>
+
+            <div class="card card-custom">
+                <div class="card-body">
+                    <h3 class="mb-4">
+                        <i class="bi bi-table"></i>
+
+                        Localidades atípicas
+                    </h3>
+
+                    <div class="table-responsive">
+                        <table id="tablaDatos" class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Localidad</th>
+
+                                    <th>Población</th>
+
+                                    <th>Z-Score</th>
+
+                                    <th>Desviación</th>
+
+                                    <th>Clasificación</th>
+                                </tr>
+                            </thead>
+
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script>
+            async function cargarDatos() {
+                try {
+                    const response = await fetch("/api/outliers");
+
+                    const datos = await response.json();
+
+                    document.getElementById("totalOutliers").innerHTML = datos.length;
+
+                    const maxZ = Math.max(...datos.map((d) => d.Z_SCORE || 0));
+
+                    document.getElementById("maxZ").innerHTML = maxZ;
+
+                    const maxPob = Math.max(...datos.map((d) => d.POBLACION || 0));
+
+                    document.getElementById("maxPob").innerHTML = maxPob.toLocaleString();
+
+                    const trace = {
+                        x: datos.map((d) => d.POBLACION),
+
+                        y: datos.map((d) => d.Z_SCORE),
+
+                        text: datos.map(
+                            (d) =>
+                                `<b>${d.NOM_LOC}</b><br>` +
+                                `Población: ${Number(d.POBLACION).toLocaleString()}<br>` +
+                                `Z-score: ${d.Z_SCORE}`
+                        ),
+
+                        mode: "markers",
+
+                        type: "scatter",
+
+                        marker: {
+                            size: datos.map((d) => Math.abs(d.Z_SCORE) * 5),
+
+                            color: datos.map((d) => d.Z_SCORE),
+
+                            colorscale: "Turbo",
+
+                            showscale: true,
+
+                            opacity: 0.75,
+                        },
+                    };
+
+                    Plotly.newPlot(
+                        "grafica",
+
+                        [trace],
+
+                        {
+                            title: "Outliers poblacionales mediante Z-score",
+
+                            xaxis: {
+                                title: "Población",
+                            },
+
+                            yaxis: {
+                                title: "Z-score",
+                            },
+                        },
+
+                        {
+                            responsive: true,
+                        }
+                    );
+
+
+                    let tablaHTML = "";
+
+                    datos.forEach((d) => {
+                        const badge = d.CLASIFICACION === "Outlier extremo" ? "badge-extremo" : "badge-moderado";
+
+                        tablaHTML += `
+
+            <tr>
+
+                <td>${d.NOM_LOC}</td>
+
+                <td>
+
+                    ${Number(d.POBLACION).toLocaleString()}
+
+                </td>
+
+                <td>
+
+                    <strong>
+
+                        ${d.Z_SCORE}
+
+                    </strong>
+
+                </td>
+
+                <td>
+
+                    ${Number(d.DESVIACION).toLocaleString()}
+
+                </td>
+
+                <td>
+
+                    <span class="${badge}">
+
+                        ${d.CLASIFICACION}
+
+                    </span>
+
+                </td>
+
+            </tr>
+
+            `;
+                    });
+
+                    document.querySelector("#tablaDatos tbody").innerHTML = tablaHTML;
+
+                    $("#tablaDatos").DataTable({
+                        language: {
+                            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+                        },
+
+                        pageLength: 10,
+
+                        lengthMenu: [
+                            [5, 10, 25, 50, -1],
+
+                            [5, 10, 25, 50, "Todos"],
+                        ],
+
+                        order: [[2, "desc"]],
+
+                        responsive: true,
+                    });
+                } catch (error) {
+                    console.error(error);
+
+                    alert("Error al cargar outliers");
+                }
+            }
+
+            cargarDatos();
+        </script>
+    </body>
+</html>
