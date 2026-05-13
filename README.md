@@ -195,9 +195,6 @@ PROYECTO_TDA/
 │   ├── tda_componentes.html
 │   └── tda_outliers.html
 │
-├── Files/
-│   └── reporte.csv
-│
 └── README.md
 
 ---
@@ -207,7 +204,7 @@ PROYECTO_TDA/
 ## 1. Clonar o descargar el proyecto
 
 ```bash
-git clone proyecto_tda.git
+git clone ANALISIS_TOPOLOGICO_DATOS.git
 ```
 
 ---
